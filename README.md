@@ -1,0 +1,4 @@
+# Grip-detection
+This is our first work on grip detection for the COMMANDIA project using low-cost visual-based tactile sensors known as DIGIT.
+
+Robotic manipulation continues being a non-solve problem. It involves many complex aspects such as perception tactile of a wide variety of objects and materials, grasping control to plan the robotic hand pose, etc. Most of previous works on this topic have been using expensive sensors. This fact difficults the application in the industry. In this work, we propose a grip detection system using a low-cost visual-based tactile sensor known as DIGIT, mounted on a ROBOTIQ gripper 2F-140. We have proved that a Deep Convolutional Network is able to detect contact or no contact. Capturing almost 16500 images with contact and no contact from different objects, we achieve 99\% accuracy with never seen samples, in the best scenario. As a result, this system will allow us to implement a grasping controller for the gripper.
