@@ -1,3 +1,7 @@
+# THIS CODE IS USED TO DETECT CONTACT IN TACTILE VISUAL IMAGES FROM DIGIT SENSORS
+
+# IMPORT LIBRARIES
+
 import numpy as np
 import cv2
 import tensorflow as tf 
@@ -10,74 +14,75 @@ from tensorflow.keras.models import model_from_json
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 
-
+# THIS FUNCTION GETS IMAGES FROM DIGIT SENSOR.
 def setup_digit():
 
     logging.basicConfig(level=logging.DEBUG)
 
-    # Print a list of connected DIGIT's
+    # PRINT A LIST OF CONNECTED DIGIT SENSORS
     digits = DigitHandler.list_digits()
     print("Connected DIGIT's to Host:")
     pprint.pprint(digits)
 
-    # Connect to a Digit device with serial number with friendly name
+    # CONNECT TO A DIGIT DEVICE WITH A FRIENDLY SERIAL NAME
     digit = Digit("D00001", "Left Gripper")
     digit_cap = DigitHandler.find_digit("D00001")
     digit.connect()
 
-    # Print device info
+    # PRINT DEVIDE INFO
     print(digit.info())
 
-    # Change LED illumination intensity
+    # CHANGE LED ILLUMATION
     digit.set_intensity(0)
     time.sleep(1)
     digit.set_intensity(255)
 
-    # Change DIGIT resolution to QVGA
+    # CHANGE DIGIT RESOLUTION TO QVGA
     qvga_res = DigitHandler.STREAMS["QVGA"]
     digit.set_resolution(qvga_res)
 
-    # Change DIGIT FPS to 15fps
+    # SET DIGIT FPS
     fps_30 = DigitHandler.STREAMS["QVGA"]["fps"]["30fps"]
     digit.set_fps(fps_30)
-    
-    # Find a Digit by serial number and connect manually
-    #digit = DigitHandler.find_digit("D00045")
-    #pprint.pprint(digit)
 
     return digit
 
 
 
 if __name__ == '__main__':
+    # CONFIG DIGIT SENSOR
     digit = setup_digit()
 
+    # LOAD ARCHITECTURE AND WEIGHTS OF THE TRAINED MODEL
     json_file = open("model-epoch-10.json")
     loaded_model_json = json_file.read()
     json_file.close()
     model = model_from_json(loaded_model_json)
     model.load_weights("weights-epoch-10.h5")
 
+    # MODEL SUMMARY
     model.summary()
-    cont_start = 0
+
+    #INFINITE LOOP
     while(True):
         
         # Grab single frame from DIGIT
         frame = digit.get_frame()
-        '''
-        if cont_start < 40:
-            cont_start += 1
-            continue
-        '''
-        #cv2.imshow("ventana", frame)
-        #cv2.waitKey(20)
+       
+        # SHOW THE IMAGE
+        cv2.imshow("ventana", frame)
+        cv2.waitKey(20)
+        
+        # IMAGE PREPROCESSING TO FEED THE CNN
         frame = np.reshape(frame, (1, 320, 240, 3))
         frame = preprocess_input(frame)
+        # PREDICTING
         pred = model.predict(frame)
         
+        # APPLY THRESHOLD TO GET THE FINAL CLASSIFICATION
         if pred > 0.5:
-            print("no contacto: {}".format(pred))
+            print("No contact: {}".format(pred))
         else: 
-            print("contacto: {}".format(pred))
+            print("Contact: {}".format(pred))
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
