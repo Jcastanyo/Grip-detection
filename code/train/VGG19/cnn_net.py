@@ -1,3 +1,7 @@
+# CODE USED TO TRAIN VGG19 MODEL TO DETECT CONTACT IN TACTILE IMAGES
+
+# IMPORT LIBRARIES
+
 import json
 import tensorflow as tf 
 import numpy 
@@ -7,23 +11,29 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications.resnet50 import preprocess_input
 import time
 
+# WE USE A TO MEASURE TRAINING TIME
 a = 0
+# WE USE THIS VARIABLE TO SAVE LOGS
 logs_list = []
 
+# WE USE THIS CLASS TO CREATE OUT CUSTOM CALLBACK
 class CustomSaver(tf.keras.callbacks.Callback):
+    # THIS FUNCION IS EXECUTED AT THE END OF THE EPOCH, WHEN WE WANT TO SAVE MODELS, LOGS, ETC.
     def on_epoch_end(self, epoch, logs={}):
         if epoch % 5 == 0:
+            
             self.model_json = model.to_json()
+            
             with open("/commandia/docker/commandia/contact/models/model/model-epoch-{}.json".format(epoch),'w') as json_file:
                 json_file.write(self.model_json)
-            #self.model.save("/commandia/docker/commandia/contact/models/model_{}.hd5".format(epoch))
+            
             self.model.save_weights("/commandia/docker/commandia/contact/models/weights/weights-epoch-{}.h5".format(epoch))
             print("\nSaved model to disk")
 
         if epoch % 1 == 0:
             b = time.time()
             c = b-a
-            print("\n{} segundos de entrenamiento".format(c))
+            print("\n{} seconds of training".format(c))
             with open("logs.json", "a") as file_pi:
                 logs_aux_list = []
                 logs_aux_list.append(logs)
@@ -34,7 +44,7 @@ class CustomSaver(tf.keras.callbacks.Callback):
 
 if __name__ == '__main__':
 
-    #filename = "/home/commandia2/Desktop/COMMANDIA/codigos_pruebas/cnn_contacto/"
+    # HERE WE LOAD TRAIN, VALIDATION AND TEST DATASETS.
 
     f = h5py.File("/commandia/docker/commandia/contact/train_3recuperan.h5", 'r')
     data_train = f['data'][:]
@@ -51,11 +61,7 @@ if __name__ == '__main__':
     label_test = f3['label'][:]
     f3.close()
 
-    '''
-    label_train = tf.keras.utils.to_categorical(label_train, dtype="uint8")
-    label_validation = tf.keras.utils.to_categorical(label_validation, dtype="uint8")
-    label_test = tf.keras.utils.to_categorical(label_test, dtype="uint8")
-    '''
+    # WE USE IMAGEDATAGENERATOR FROM KERAS TO APPLY DATA AUGMENTATION
 
     train_datagen = ImageDataGenerator(preprocessing_function=preprocess_input,
                                         zoom_range=0.2,
@@ -77,28 +83,22 @@ if __name__ == '__main__':
                                             batch_size=32, shuffle=True)
 
     test_generator = test_datagen.flow(data_test, label_test,
-                                            batch_size=32, shuffle=True)                                            
+                                            batch_size=32, shuffle=True)     
+    
 
-    '''
-    for x,y in train_generator:
-        for i in x:
-            cv2.imshow("ventana", i)
-            cv2.waitKey(500)                                            
-    '''
+    # LOAD VGG19 MODEL WITHOUT FINAL CLASSIFIER, WE WANT TO TRAIN USING TRANSFER LEARNING
 
     vgg_model = VGG19(include_top=False, weights='imagenet',
                                 input_shape=(320, 240, 3))
 
-    #vgg_model.summary()
+    # WE APPLY TRANSFER LEARNING, WE FREEZE SOME LAYERS AND TRAIN OTHERS
 
     for layer in vgg_model.layers[:7]:
         layer.trainable = False
 
-    '''
-    for i, layer in enumerate(resnet_model.layers):
-        print(i, layer.name, "-", layer.trainable)
-    '''
-
+    
+    # CREATE NEW MODEL AND ADD SOME FINAL LAYERS TO ADAPT THE MODEL TO OUR TASK
+    
     model = tf.keras.models.Sequential()
     model.add(vgg_model)
     model.add(tf.keras.layers.Flatten())
@@ -119,14 +119,22 @@ if __name__ == '__main__':
     model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
 
 
+    # HYPER-PARAMS
+    
     model.compile(loss='binary_crossentropy', 
                     optimizer=tf.keras.optimizers.Adam(lr=1e-6),
                     metrics=['accuracy'])
 
+    # FINAL SUMMARY
     model.summary()
-
+    
+    # CREATE AN OBJECT OF OUR CUSTOM CALLBACK
     saver = CustomSaver()
+    
+    # START COUNTING TIME
     a = time.time()
+    
+    # START TRAINING
     history = model.fit(train_generator, validation_data=validation_generator,
                                     epochs = 100, callbacks=[saver])
 
