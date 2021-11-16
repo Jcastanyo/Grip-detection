@@ -1,3 +1,7 @@
+# WE USE THIS CODE TO EVALUATE OUR MODEL AND SEE TEST METRICS
+
+# IMPORT LIBRARIES
+
 import numpy as np
 import cv2
 import tensorflow as tf 
@@ -18,14 +22,17 @@ import h5py
 
 if __name__ == '__main__':
 
+    # LOAD ARCHITECTURE AND WEIGHTS OF THE TRAINED MODEL
     json_file = open("model-epoch-95.json")
     loaded_model_json = json_file.read()
     json_file.close()
     model = model_from_json(loaded_model_json)
     model.load_weights("weights-epoch-95.h5")
 
+    # MODEL SUMMARY
     model.summary()
     
+    # LOAD TEST SET FROM DIRECTORY
     filename = "/home/commandia2/Desktop/COMMANDIA/codigos_pruebas/cnn_contacto/"
 
     f = h5py.File(filename + "test_contacto_sensores_3recuperan.h5", 'r')
@@ -33,29 +40,39 @@ if __name__ == '__main__':
     label_test = f['label'][:]
     f.close()
 
-    print(data_test.shape[0])
-
+    # HERE WE SAVE PREDICTIONS AND TIME VALUES IN LISTS
     predictions = []
     times = []
+    
+    # PREDICTION AND TIME FOR EACH IMAGE
     for cont, img in enumerate(data_test):
+        # START TIME
         a = time.time()
+        # IMAGE PREPROCESSING TO FEED THE CNN
         frame = np.reshape(img, (1, 320, 240, 3))
         frame = preprocess_input(frame)
+        # PREDICTING
         pred = model.predict(frame)
 
+        # APPLY THRESHOLD TO GET THE FINAL CLASSIFICATION
         if pred > 0.5:
             pred_class = 1
         else: 
             pred_class = 0
 
+        # FINAL TIME
         b = time.time()
         
+        # CALCULATE INTERVAL AND SAVE
         times.append((b-a))
         
+        # SAVE PREDICTION
         predictions.append(pred_class)
 
+    # PREDICTION IN NP ARRAY TYPE
     predictions_np = np.asarray(predictions)
 
+    # CALCULATE METRICS
     print(confusion_matrix(label_test, predictions_np))
     tn, fp, fn, tp = confusion_matrix(label_test, predictions_np).ravel()
     print(tn, fp, fn, tp)
@@ -72,6 +89,8 @@ if __name__ == '__main__':
     f1 = f1_score(label_test, predictions_np)
     print('F1 score: %f' % f1)
 
+    # CALCULATE MEAN INFERENCE TIME
+    
     aux = 0
     for i in times:
         aux += i
