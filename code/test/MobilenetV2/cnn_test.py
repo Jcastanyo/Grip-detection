@@ -70,7 +70,7 @@ if __name__ == '__main__':
         frame = digit.get_frame()
        
         # SHOW THE IMAGE
-        cv2.imshow("ventana", frame)
+        cv2.imshow("window", frame)
         cv2.waitKey(20)
         
         # IMAGE PREPROCESSING TO FEED THE CNN
