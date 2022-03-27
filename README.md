@@ -5,3 +5,6 @@ Robotic manipulation continues being an unsolved problem. It involves many compl
 
 # Citation
 Castaño-Amoros, J.; Gil, P. and Puente, S. (2021). Touch Detection with Low-cost Visual-based Sensor.  In Proceedings of the 2nd International Conference on Robotics, Computer Vision and Intelligent Systems, ISBN 978-989-758-537-1, pages 136-142.    
+
+# Video
+https://www.youtube.com/watch?v=_eRZ1wWoiR0&t=78s
